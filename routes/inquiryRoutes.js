@@ -18,7 +18,7 @@ const twilioClient = twilio(
 );
 
 // Create new inquiry
-router.post("/", async (req, res) => {
+rrouter.post("/", async (req, res) => {
     try {
         const { name, phone, email, eventType, eventDate, guests, budget, message } = req.body;
 
@@ -42,8 +42,7 @@ router.post("/", async (req, res) => {
 
         const savedInquiry = await newInquiry.save();
 
-        // Send Email Notification
-        await transporter.sendMail({
+        const emailPromise = transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: process.env.EMAIL_USER,
             subject: `New Event Inquiry from ${name}`,
@@ -60,8 +59,7 @@ router.post("/", async (req, res) => {
       `,
         });
 
-        // Send WhatsApp Notification
-        await twilioClient.messages.create({
+        const whatsappPromise = twilioClient.messages.create({
             from: process.env.TWILIO_WHATSAPP_FROM,
             to: process.env.TWILIO_WHATSAPP_TO,
             body: `New Event Inquiry
@@ -75,6 +73,16 @@ Guests: ${guests || "Not provided"}
 Budget: ${budget || "Not provided"}
 Message: ${message || "Not provided"}`,
         });
+
+        const results = await Promise.allSettled([emailPromise, whatsappPromise]);
+
+        if (results[0].status === "rejected") {
+            console.error("Email notification error:", results[0].reason);
+        }
+
+        if (results[1].status === "rejected") {
+            console.error("WhatsApp notification error:", results[1].reason);
+        }
 
         res.status(201).json({
             success: true,
@@ -90,24 +98,3 @@ Message: ${message || "Not provided"}`,
         });
     }
 });
-
-// Get all inquiries
-router.get("/", async (req, res) => {
-    try {
-        const inquiries = await Inquiry.find().sort({ createdAt: -1 });
-
-        res.status(200).json({
-            success: true,
-            count: inquiries.length,
-            data: inquiries,
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Server error",
-            error: error.message,
-        });
-    }
-});
-
-module.exports = router;

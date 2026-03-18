@@ -10,21 +10,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// MongoDB connection
 mongoose
-    .connect(process.env.MONGO_URI)
+    .connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 10000 })
     .then(() => console.log("MongoDB Connected"))
-    .catch((err) => console.log("MongoDB Error:", err));
+    .catch((err) => console.log("MongoDB Error:", err.message));
 
-// Test route
 app.get("/", (req, res) => {
     res.send("Event Management Backend Running");
 });
 
-// API routes
 app.use("/api/inquiries", inquiryRoutes);
 
-// IMPORTANT CHANGE
 const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
