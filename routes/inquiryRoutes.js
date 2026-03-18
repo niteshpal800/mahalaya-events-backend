@@ -18,7 +18,7 @@ const twilioClient = twilio(
 );
 
 // Create new inquiry
-rrouter.post("/", async (req, res) => {
+router.post("/", async (req, res) => {
     try {
         const { name, phone, email, eventType, eventDate, guests, budget, message } = req.body;
 
